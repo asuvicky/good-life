@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Staff {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  role         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdParcels Parcel[] @relation("CreatedBy")
+  claimedParcels Parcel[] @relation("ClaimedBy")
+}
+
+model Household {
+  id              String   @id @default(cuid())
+  doorplate       String
+  householdNumber String
+  residentName    String?
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  lineBindings LineBinding[]
+  parcels      Parcel[]
+
+  @@unique([doorplate, householdNumber])
+}
+
+model LineBinding {
+  id          String    @id @default(cuid())
+  lineUserId  String    @unique
+  displayName String?
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  boundAt     DateTime  @default(now())
+}
+
+model Parcel {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  type        String
+  photoPath   String
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
+  createdById String
+  createdBy   Staff     @relation("CreatedBy", fields: [createdById], references: [id])
+  claimedAt   DateTime?
+  claimedById String?
+  claimedBy   Staff?    @relation("ClaimedBy", fields: [claimedById], references: [id])
+}
+
+model LineConversation {
+  lineUserId String   @id
+  step       String
+  doorplate  String?
+  updatedAt  DateTime @updatedAt
+}

@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f3f6f4;
+  --ink: #14332b;
+  --muted: #5b7068;
+  --line: #d7e3dc;
+  --card: #ffffff;
+  --brand: #0f6b57;
+  --brand-2: #14856c;
+  --accent: #d4a017;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family:
+    "Noto Sans TC",
+    "Microsoft JhengHei",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}

@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: file:/app/data/dev.db
+      APP_BASE_URL: ${APP_BASE_URL}
+    volumes:
+      - goodlife-data:/app/data
+      - goodlife-uploads:/app/public/uploads
+
+volumes:
+  goodlife-data:
+  goodlife-uploads:
