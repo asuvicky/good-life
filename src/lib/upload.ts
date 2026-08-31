@@ -7,7 +7,14 @@ import { appBaseUrl } from "@/lib/app-url";
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 function blobEnabled() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  // Vercel Blob：舊版用 BLOB_READ_WRITE_TOKEN，新版用 OIDC + BLOB_STORE_ID
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID,
+  );
+}
+
+function isVercelRuntime() {
+  return Boolean(process.env.VERCEL);
 }
 
 export async function saveUpload(file: File) {
@@ -32,6 +39,12 @@ export async function saveUpload(file: File) {
       addRandomSuffix: false,
     });
     return blob.url;
+  }
+
+  if (isVercelRuntime()) {
+    throw new Error(
+      "尚未設定 Vercel Blob。請到 Vercel → Storage → 建立 Blob 並連到此專案，然後重新部署。",
+    );
   }
 
   await mkdir(UPLOAD_DIR, { recursive: true });
