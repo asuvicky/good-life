@@ -52,8 +52,13 @@ export default async function LineSetupPage({
             detail={
               status.blob
                 ? "已設定，包裹照片會永久保存"
-                : "Vercel 上請建立 Blob Store；本機可暫用 public/uploads"
+                : "Vercel 上請建立 Blob Store；建好後務必 Redeploy"
             }
+          />
+          <StatusRow
+            ok={status.https && status.blob}
+            label="Production 提醒"
+            detail="Blob 環境變數若是後來才加的，必須到 Deployments → Redeploy 才會生效"
           />
           <StatusRow
             ok={status.secret}
