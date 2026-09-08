@@ -11,8 +11,17 @@ export async function middleware(request: NextRequest) {
   );
   const { pathname } = request.nextUrl;
 
+  if (pathname.startsWith("/my")) {
+    if (!session.residentId) {
+      const login = new URL("/", request.url);
+      login.searchParams.set("error", "needlogin");
+      return NextResponse.redirect(login);
+    }
+    return response;
+  }
+
   if (!session.staffId) {
-    const login = new URL("/", request.url);
+    const login = new URL("/staff", request.url);
     login.searchParams.set("from", pathname);
     return NextResponse.redirect(login);
   }
@@ -25,5 +34,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/chair/:path*"],
+  matcher: ["/admin/:path*", "/chair/:path*", "/my/:path*"],
 };

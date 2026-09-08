@@ -6,6 +6,9 @@ export type SessionData = {
   name?: string;
   username?: string;
   role?: string;
+  residentId?: string;
+  residentUsername?: string;
+  householdId?: string;
 };
 
 export const sessionOptions: SessionOptions = {
@@ -30,6 +33,14 @@ export async function requireStaff(allowed?: string[]) {
     return null;
   }
   if (allowed && !allowed.includes(session.role)) {
+    return null;
+  }
+  return session;
+}
+
+export async function requireResident() {
+  const session = await getSession();
+  if (!session.residentId || !session.householdId) {
     return null;
   }
   return session;

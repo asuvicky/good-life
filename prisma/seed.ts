@@ -30,10 +30,24 @@ async function main() {
   });
 
   const samples = [
-    { doorplate: "1號", householdNumber: "A1", residentName: "王小明" },
-    { doorplate: "1號", householdNumber: "A2", residentName: "陳美玲" },
-    { doorplate: "2號", householdNumber: "B1", residentName: "林志豪" },
-    { doorplate: "3號", householdNumber: "C1", residentName: "張雅婷" },
+    {
+      doorplate: "407",
+      householdNumber: "A1",
+      phoneLast3: "123",
+      residentName: "王小明",
+    },
+    {
+      doorplate: "409",
+      householdNumber: "A2",
+      phoneLast3: "456",
+      residentName: "陳美玲",
+    },
+    {
+      doorplate: "411",
+      householdNumber: "B1",
+      phoneLast3: "789",
+      residentName: "林志豪",
+    },
   ];
 
   for (const h of samples) {
@@ -44,7 +58,10 @@ async function main() {
           householdNumber: h.householdNumber,
         },
       },
-      update: {},
+      update: {
+        phoneLast3: h.phoneLast3,
+        residentName: h.residentName,
+      },
       create: h,
     });
   }

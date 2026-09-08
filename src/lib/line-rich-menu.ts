@@ -27,9 +27,9 @@ export async function ensureRichMenuImage() {
   <rect x="1250" width="1250" height="${HEIGHT}" fill="#14856c"/>
   <line x1="1250" y1="60" x2="1250" y2="${HEIGHT - 60}" stroke="#ffffff" stroke-opacity="0.25" stroke-width="4"/>
   <text x="625" y="380" text-anchor="middle" fill="#ffffff" font-size="96" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif" font-weight="700">綁定</text>
-  <text x="625" y="500" text-anchor="middle" fill="#d7e3dc" font-size="42" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif">門牌與戶號</text>
+  <text x="625" y="500" text-anchor="middle" fill="#d7e3dc" font-size="42" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif">門牌／戶號／末三碼</text>
   <text x="1875" y="380" text-anchor="middle" fill="#ffffff" font-size="96" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif" font-weight="700">我的包裹</text>
-  <text x="1875" y="500" text-anchor="middle" fill="#d7e3dc" font-size="42" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif">未領取清單</text>
+  <text x="1875" y="500" text-anchor="middle" fill="#d7e3dc" font-size="42" font-family="Microsoft JhengHei, Noto Sans TC, Arial, sans-serif">開啟網頁查看</text>
 </svg>`;
 
   await mkdir(path.dirname(outPath), { recursive: true });
@@ -57,6 +57,8 @@ export async function setupDefaultRichMenu(accessToken: string) {
     }
   }
 
+  const portal = appBaseUrl() || "https://good-life-rouge.vercel.app";
+
   const { richMenuId } = await client.createRichMenu({
     size: { width: WIDTH, height: HEIGHT },
     selected: true,
@@ -69,7 +71,11 @@ export async function setupDefaultRichMenu(accessToken: string) {
       },
       {
         bounds: { x: 1250, y: 0, width: 1250, height: HEIGHT },
-        action: { type: "message", label: "我的包裹", text: "我的包裹" },
+        action: {
+          type: "uri",
+          label: "我的包裹",
+          uri: portal,
+        },
       },
     ],
   });

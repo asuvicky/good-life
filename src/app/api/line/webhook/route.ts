@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   isLineConfigured,
-  myParcelsText,
   replyMessages,
   replyText,
   replyWelcome,
   verifyLineSignature,
   type LineEvent,
 } from "@/lib/line";
+import { appBaseUrl } from "@/lib/app-url";
 
 export const runtime = "nodejs";
 
@@ -35,6 +35,10 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
+function portalUrl() {
+  return appBaseUrl() || "https://good-life-rouge.vercel.app";
+}
+
 async function handleEvent(event: LineEvent) {
   const userId = event.source?.userId;
   const replyToken = event.replyToken;
@@ -55,7 +59,7 @@ async function handleEvent(event: LineEvent) {
   if (!text) {
     await replyText(
       replyToken,
-      "請輸入「綁定」開始綁定住戶，或輸入「我的包裹」查看尚未領取清單。",
+      "請輸入「綁定」開始綁定住戶，或點選單「我的包裹」開啟網頁查看包裹。",
     );
     return;
   }
@@ -64,18 +68,27 @@ async function handleEvent(event: LineEvent) {
   if (["綁定", "bind", "開始綁定"].includes(normalized.toLowerCase())) {
     await prisma.lineConversation.upsert({
       where: { lineUserId: userId },
-      update: { step: "await_doorplate", doorplate: null },
+      update: {
+        step: "await_doorplate",
+        doorplate: null,
+        householdNumber: null,
+      },
       create: { lineUserId: userId, step: "await_doorplate" },
     });
     await replyText(
       replyToken,
-      "請輸入門牌號碼（需與主委登錄的資料完全相同，例如：1號）。",
+      "請輸入門牌號碼（例如：407、409、411）",
     );
     return;
   }
 
   if (["我的包裹", "包裹", "未領取"].includes(normalized)) {
-    await sendMyParcels(userId, replyToken);
+    await replyMessages(replyToken, [
+      {
+        type: "text",
+        text: `請由此開啟網頁查看／註冊帳號：\n${portalUrl()}`,
+      },
+    ]);
     return;
   }
 
@@ -93,24 +106,50 @@ async function handleEvent(event: LineEvent) {
   }
 
   if (convo?.step === "await_household") {
+    await prisma.lineConversation.update({
+      where: { lineUserId: userId },
+      data: { step: "await_phone_last3", householdNumber: text },
+    });
+    await replyText(replyToken, "請輸入電話末三碼。");
+    return;
+  }
+
+  if (convo?.step === "await_phone_last3") {
     const doorplate = convo.doorplate || "";
+    const householdNumber = convo.householdNumber || "";
+    const phoneLast3 = text.replace(/\D/g, "").slice(-3);
+
+    if (phoneLast3.length !== 3) {
+      await replyText(replyToken, "電話末三碼需為 3 位數字，請重新輸入。");
+      return;
+    }
+
     const household = await prisma.household.findUnique({
       where: {
         doorplate_householdNumber: {
           doorplate,
-          householdNumber: text,
+          householdNumber,
         },
       },
     });
 
+    await prisma.lineConversation.update({
+      where: { lineUserId: userId },
+      data: { step: "idle", doorplate: null, householdNumber: null },
+    });
+
     if (!household) {
-      await prisma.lineConversation.update({
-        where: { lineUserId: userId },
-        data: { step: "idle", doorplate: null },
-      });
       await replyText(
         replyToken,
-        `找不到門牌「${doorplate}」、戶號「${text}」的住戶資料。請向主委確認名單後，再輸入「綁定」。`,
+        `找不到門牌「${doorplate}」、戶號「${householdNumber}」的住戶資料。請向主委確認名單後，再輸入「綁定」。`,
+      );
+      return;
+    }
+
+    if (household.phoneLast3 !== phoneLast3) {
+      await replyText(
+        replyToken,
+        "電話末三碼與住戶資料不符，請確認後再輸入「綁定」。",
       );
       return;
     }
@@ -120,48 +159,21 @@ async function handleEvent(event: LineEvent) {
       update: { householdId: household.id },
       create: { lineUserId: userId, householdId: household.id },
     });
-    await prisma.lineConversation.update({
-      where: { lineUserId: userId },
-      data: { step: "idle", doorplate: null },
-    });
+
     await replyText(
       replyToken,
-      `綁定成功：${household.doorplate}／戶號 ${household.householdNumber}${household.residentName ? `（${household.residentName}）` : ""}。\n之後有新包裹或郵件會通知您。`,
+      [
+        `綁定成功：${household.doorplate}／戶號 ${household.householdNumber}${household.residentName ? `（${household.residentName}）` : ""}。`,
+        "之後有新包裹或郵件會通知您。",
+        "",
+        `查看包裹請點選單「我的包裹」，或開啟：${portalUrl()}`,
+      ].join("\n"),
     );
     return;
   }
 
   await replyText(
     replyToken,
-    "可用指令：\n・綁定　綁定門牌與戶號\n・我的包裹　查看尚未領取的包裹",
+    "可用指令：\n・綁定　綁定門牌、戶號與電話末三碼\n・點選單「我的包裹」開啟網頁查看包裹",
   );
-}
-
-async function sendMyParcels(lineUserId: string, replyToken: string) {
-  const binding = await prisma.lineBinding.findUnique({
-    where: { lineUserId },
-    include: {
-      household: {
-        include: {
-          parcels: {
-            where: { status: "PENDING" },
-            orderBy: { createdAt: "desc" },
-            include: { household: true },
-          },
-        },
-      },
-    },
-  });
-
-  if (!binding) {
-    await replyText(
-      replyToken,
-      "尚未綁定住戶。請先輸入「綁定」，並填入主委登錄的門牌與戶號。",
-    );
-    return;
-  }
-
-  await replyMessages(replyToken, [
-    { type: "text", text: myParcelsText(binding.household.parcels) },
-  ]);
 }

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { messagingApi } from "@line/bot-sdk";
 import type { Parcel, Household } from "@prisma/client";
 import type { ParcelType } from "@/lib/types";
+import { appBaseUrl } from "@/lib/app-url";
 
 export type LineMessage = {
   type: "text";
@@ -100,11 +101,12 @@ export function welcomeText() {
     "請先綁定住戶資料，才能收到包裹／郵件通知。",
     "點下方「綁定」，或直接輸入：綁定",
     "",
-    "綁定後可點「我的包裹」查看尚未領取的包裹。",
+    "綁定後可點「我的包裹」開啟網頁查看包裹。",
   ].join("\n");
 }
 
 export function welcomeQuickReply() {
+  const uri = appBaseUrl();
   return {
     items: [
       {
@@ -113,11 +115,17 @@ export function welcomeQuickReply() {
       },
       {
         type: "action" as const,
-        action: {
-          type: "message" as const,
-          label: "我的包裹",
-          text: "我的包裹",
-        },
+        action: uri
+          ? {
+              type: "uri" as const,
+              label: "我的包裹",
+              uri,
+            }
+          : {
+              type: "message" as const,
+              label: "我的包裹",
+              text: "我的包裹",
+            },
       },
     ],
   };
@@ -136,7 +144,7 @@ export function parcelNotifyMessages(opts: {
     `戶號：${opts.householdNumber}`,
     "",
     "請於管委會服務時間前往領取。",
-    "輸入「我的包裹」可查看尚未領取清單。",
+    "點選單「我的包裹」可開啟網頁查看詳情。",
   ].join("\n");
 
   const messages: LineMessage[] = [{ type: "text", text }];

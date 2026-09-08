@@ -19,7 +19,7 @@ export default async function HouseholdsPage({
       <section>
         <h1 className="text-2xl font-semibold">{editing ? "編輯住戶" : "新增住戶"}</h1>
         <p className="mt-1 text-[var(--muted)]">
-          住戶需輸入與此處完全相同的門牌與戶號，才能綁定 LINE
+          住戶需輸入與此處完全相同的門牌、戶號與電話末三碼，才能綁定 LINE 或註冊網頁帳號
         </p>
         {error && (
           <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
@@ -36,6 +36,7 @@ export default async function HouseholdsPage({
             <input
               name="doorplate"
               required
+              placeholder="例如：407"
               defaultValue={editing?.doorplate ?? ""}
               className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2.5"
             />
@@ -46,6 +47,19 @@ export default async function HouseholdsPage({
               name="householdNumber"
               required
               defaultValue={editing?.householdNumber ?? ""}
+              className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2.5"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm text-[var(--muted)]">電話末三碼</span>
+            <input
+              name="phoneLast3"
+              required
+              inputMode="numeric"
+              maxLength={3}
+              pattern="[0-9]{3}"
+              placeholder="例如：123"
+              defaultValue={editing?.phoneLast3 || ""}
               className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2.5"
             />
           </label>
@@ -74,11 +88,12 @@ export default async function HouseholdsPage({
       <section>
         <h2 className="text-xl font-semibold">住戶名單</h2>
         <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--line)] bg-white">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-[var(--bg)] text-[var(--muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">門牌</th>
                 <th className="px-4 py-3 font-medium">戶號</th>
+                <th className="px-4 py-3 font-medium">末三碼</th>
                 <th className="px-4 py-3 font-medium">姓名</th>
                 <th className="px-4 py-3 font-medium">LINE</th>
                 <th className="px-4 py-3 font-medium">更新</th>
@@ -90,6 +105,7 @@ export default async function HouseholdsPage({
                 <tr key={h.id} className="border-t border-[var(--line)]">
                   <td className="px-4 py-3">{h.doorplate}</td>
                   <td className="px-4 py-3">{h.householdNumber}</td>
+                  <td className="px-4 py-3">{h.phoneLast3 || "—"}</td>
                   <td className="px-4 py-3">{h.residentName || "—"}</td>
                   <td className="px-4 py-3">{h._count.lineBindings} 人</td>
                   <td className="px-4 py-3 text-[var(--muted)]">{formatDateTime(h.updatedAt)}</td>

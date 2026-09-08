@@ -103,16 +103,25 @@ export async function upsertHouseholdAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const doorplate = String(formData.get("doorplate") || "").trim();
   const householdNumber = String(formData.get("householdNumber") || "").trim();
+  const phoneLast3Raw = String(formData.get("phoneLast3") || "").trim();
+  const phoneLast3 = phoneLast3Raw.replace(/\D/g, "").slice(-3);
   const residentName = String(formData.get("residentName") || "").trim();
   const note = String(formData.get("note") || "").trim();
 
   if (!doorplate || !householdNumber) {
     redirect("/chair/households?error=" + encodeURIComponent("門牌與戶號為必填"));
   }
+  if (phoneLast3.length !== 3) {
+    redirect(
+      "/chair/households?error=" +
+        encodeURIComponent("電話末三碼需為 3 位數字"),
+    );
+  }
 
   const data = {
     doorplate,
     householdNumber,
+    phoneLast3,
     residentName: residentName || null,
     note: note || null,
   };

@@ -24,6 +24,7 @@ model Household {
   id              String   @id @default(cuid())
   doorplate       String
   householdNumber String
+  phoneLast3      String   @default("")
   residentName    String?
   note            String?
   createdAt       DateTime @default(now())
@@ -31,8 +32,19 @@ model Household {
 
   lineBindings LineBinding[]
   parcels      Parcel[]
+  residents    Resident[]
 
   @@unique([doorplate, householdNumber])
+}
+
+model Resident {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model LineBinding {
@@ -60,8 +72,9 @@ model Parcel {
 }
 
 model LineConversation {
-  lineUserId String   @id
-  step       String
-  doorplate  String?
-  updatedAt  DateTime @updatedAt
+  lineUserId      String   @id
+  step            String
+  doorplate       String?
+  householdNumber String?
+  updatedAt       DateTime @updatedAt
 }
