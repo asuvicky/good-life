@@ -243,3 +243,30 @@ export async function setupLineRichMenuAction() {
   revalidatePath("/chair/line");
   redirect(`/chair/line?ok=richmenu&id=${encodeURIComponent(richMenuId)}`);
 }
+
+export async function clearLineRichMenuAction() {
+  const session = await requireStaff(["CHAIR"]);
+  if (!session?.staffId) redirect("/");
+
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) {
+    redirect(
+      "/chair/line?error=" +
+        encodeURIComponent("尚未設定 LINE_CHANNEL_ACCESS_TOKEN"),
+    );
+  }
+
+  let deleted = 0;
+  try {
+    const { clearApiRichMenus } = await import("@/lib/line-rich-menu");
+    const result = await clearApiRichMenus(token);
+    deleted = result.deleted;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "清除圖文選單失敗";
+    redirect("/chair/line?error=" + encodeURIComponent(message));
+  }
+
+  revalidatePath("/chair/line");
+  redirect(`/chair/line?ok=cleared&count=${deleted}`);
+}

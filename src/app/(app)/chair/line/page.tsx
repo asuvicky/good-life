@@ -1,13 +1,21 @@
 import { prisma } from "@/lib/db";
 import { getLineSetupStatus } from "@/lib/line-rich-menu";
-import { setupLineRichMenuAction } from "@/app/actions";
+import {
+  clearLineRichMenuAction,
+  setupLineRichMenuAction,
+} from "@/app/actions";
 
 export default async function LineSetupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ok?: string; id?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    ok?: string;
+    id?: string;
+    count?: string;
+  }>;
 }) {
-  const { error, ok, id } = await searchParams;
+  const { error, ok, id, count } = await searchParams;
   const status = getLineSetupStatus();
   const [bindingCount, householdCount, pendingCount] = await Promise.all([
     prisma.lineBinding.count(),
@@ -20,7 +28,7 @@ export default async function LineSetupPage({
       <div>
         <h1 className="text-2xl font-semibold">LINE 串接設定</h1>
         <p className="mt-1 text-[var(--muted)]">
-          檢查官方帳號設定、Webhook，並一鍵建立住戶圖文選單
+          檢查官方帳號設定、Webhook；圖文選單建議在 LINE Official Account Manager 自行設定
         </p>
       </div>
 
@@ -31,6 +39,13 @@ export default async function LineSetupPage({
         <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           圖文選單已建立並設為預設
           {id ? `（${id}）` : ""}。請用手機開啟官方帳號確認下方選單。
+        </p>
+      )}
+      {ok === "cleared" && (
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          已清除程式建立的圖文選單
+          {count ? `（共 ${count} 個）` : ""}。請到 LINE Official Account Manager
+          發布你自己的選單，並用手機重新開啟聊天室確認。
         </p>
       )}
 
@@ -104,27 +119,41 @@ export default async function LineSetupPage({
       <section className="rounded-2xl border border-[var(--line)] bg-white p-5">
         <h2 className="text-lg font-semibold">圖文選單</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          建立後，聊天室下方會出現「綁定」「我的包裹」兩個按鈕。需先填好 Channel Access
-          Token。
+          若你已在 LINE Official Account Manager 自行設定選單，但仍看到舊圖片，通常是因為程式先前建立的
+          API 選單仍是預設。請先按下方「清除程式建立的選單」，再回 OA Manager 發布你的選單。
         </p>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/line/rich-menu.png"
-          alt="圖文選單預覽"
-          className="mt-4 w-full max-w-xl rounded-xl border border-[var(--line)] bg-[var(--bg)] object-cover"
-        />
-        <form action={setupLineRichMenuAction} className="mt-4">
-          <button
-            type="submit"
-            disabled={!status.token}
-            className="rounded-xl bg-[var(--brand)] px-4 py-2.5 text-white hover:bg-[var(--brand-2)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            建立／更新圖文選單
-          </button>
-        </form>
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          也可在終端機執行：<code>npm run line:rich-menu</code>
-        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <form action={clearLineRichMenuAction}>
+            <button
+              type="submit"
+              disabled={!status.token}
+              className="rounded-xl bg-[var(--brand)] px-4 py-2.5 text-white hover:bg-[var(--brand-2)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              清除程式建立的選單
+            </button>
+          </form>
+          <form action={setupLineRichMenuAction}>
+            <button
+              type="submit"
+              disabled={!status.token}
+              className="rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 hover:bg-[var(--bg)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              （選用）用程式重建選單
+            </button>
+          </form>
+        </div>
+        <div className="mt-4 rounded-xl bg-[var(--bg)] p-4 text-sm text-[var(--muted)]">
+          <p className="font-medium text-[var(--ink)]">OA Manager 建議設定</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>
+              綁定：動作選「傳送訊息」，內容填 <code>綁定</code>
+            </li>
+            <li>
+              我的包裹：動作選「連結」，網址填{" "}
+              <code>{status.baseUrl || "https://good-life-rouge.vercel.app"}</code>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">

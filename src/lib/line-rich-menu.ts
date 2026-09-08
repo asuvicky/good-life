@@ -89,6 +89,28 @@ export async function setupDefaultRichMenu(accessToken: string) {
   return { richMenuId, imagePath };
 }
 
+/** 清除 Messaging API 建立的圖文選單，改由 Official Account Manager 管理 */
+export async function clearApiRichMenus(accessToken: string) {
+  const client = new messagingApi.MessagingApiClient({
+    channelAccessToken: accessToken,
+  });
+
+  try {
+    await client.cancelDefaultRichMenu();
+  } catch {
+    // 沒有預設選單時略過
+  }
+
+  const existing = await client.getRichMenuList();
+  let deleted = 0;
+  for (const menu of existing.richmenus ?? []) {
+    await client.deleteRichMenu(menu.richMenuId);
+    deleted += 1;
+  }
+
+  return { deleted };
+}
+
 export function getLineSetupStatus() {
   const secret = Boolean(process.env.LINE_CHANNEL_SECRET);
   const token = Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN);
