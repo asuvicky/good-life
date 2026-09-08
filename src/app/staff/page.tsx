@@ -23,7 +23,7 @@ export default async function StaffLoginPage({
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-white p-8 shadow-sm">
-        <p className="text-sm font-medium text-[var(--brand)]">社區管委會後台</p>
+        <p className="text-sm font-medium text-[var(--brand)]">社區管理室後台</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">好生活社區</h1>
         <p className="mt-2 text-[var(--muted)]">主委／管理員登入</p>
 

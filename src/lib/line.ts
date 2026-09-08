@@ -139,11 +139,11 @@ export function parcelNotifyMessages(opts: {
 }): LineMessage[] {
   const kind = typeLabel(opts.type);
   const text = [
-    `您有新的${kind}已送達管委會。`,
+    `您有新的${kind}已送達管理室。`,
     `門牌：${opts.doorplate}`,
     `戶號：${opts.householdNumber}`,
     "",
-    "請於管委會服務時間前往領取。",
+    "請於管理室服務時間前往領取。",
     "點選單「我的包裹」可開啟網頁查看詳情。",
   ].join("\n");
 
@@ -175,6 +175,6 @@ export function myParcelsText(
     );
     lines.push(`   送達時間：${when}`);
   });
-  lines.push("", "請於管委會服務時間前往領取。");
+  lines.push("", "請於管理室服務時間前往領取。");
   return lines.join("\n");
 }

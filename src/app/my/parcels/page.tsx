@@ -80,7 +80,7 @@ export default async function MyParcelsPage({
                     送達時間：{formatDateTime(p.createdAt)}
                   </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
-                    請於管委會服務時間前往領取
+                    請於管理室服務時間前往領取
                   </p>
                 </div>
               </article>

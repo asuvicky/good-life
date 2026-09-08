@@ -4,7 +4,6 @@ import {
   isLineConfigured,
   replyMessages,
   replyText,
-  replyWelcome,
   verifyLineSignature,
   type LineEvent,
 } from "@/lib/line";
@@ -45,7 +44,7 @@ async function handleEvent(event: LineEvent) {
   if (!userId || !replyToken) return;
 
   if (event.type === "follow") {
-    await replyWelcome(replyToken);
+    // 歡迎詞由 LINE Official Account Manager「加入好友歡迎訊息」處理，這裡不重複發送
     return;
   }
 
@@ -101,7 +100,10 @@ async function handleEvent(event: LineEvent) {
       where: { lineUserId: userId },
       data: { step: "await_household", doorplate: text },
     });
-    await replyText(replyToken, `門牌「${text}」已記錄。請接著輸入戶號。`);
+    await replyText(
+      replyToken,
+      `門牌「${text}」已記錄。請接著輸入戶號。例如：10F-1`,
+    );
     return;
   }
 

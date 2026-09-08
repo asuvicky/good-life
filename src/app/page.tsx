@@ -72,7 +72,7 @@ export default async function HomePage({
             註冊
           </Link>
           <Link href="/staff" className="text-[var(--muted)] underline-offset-2 hover:underline">
-            管委會後台登入
+            管理室後台登入
           </Link>
         </div>
       </div>
