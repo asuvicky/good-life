@@ -57,18 +57,19 @@ model LineBinding {
 }
 
 model Parcel {
-  id          String    @id @default(cuid())
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id])
-  type        String
-  photoPath   String
-  status      String    @default("PENDING")
-  createdAt   DateTime  @default(now())
-  createdById String
-  createdBy   Staff     @relation("CreatedBy", fields: [createdById], references: [id])
-  claimedAt   DateTime?
-  claimedById String?
-  claimedBy   Staff?    @relation("ClaimedBy", fields: [claimedById], references: [id])
+  id           String    @id @default(cuid())
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id])
+  type         String
+  photoPath    String
+  parcelNumber Int?
+  status       String    @default("PENDING")
+  createdAt    DateTime  @default(now())
+  createdById  String
+  createdBy    Staff     @relation("CreatedBy", fields: [createdById], references: [id])
+  claimedAt    DateTime?
+  claimedById  String?
+  claimedBy    Staff?    @relation("ClaimedBy", fields: [claimedById], references: [id])
 }
 
 model LineConversation {

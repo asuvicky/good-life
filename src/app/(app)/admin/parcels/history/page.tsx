@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDateTime, parcelTypeLabel } from "@/lib/format";
+import { formatParcelNumber } from "@/lib/parcel-number";
 
 export default async function ParcelHistoryPage({
   searchParams,
@@ -9,11 +10,21 @@ export default async function ParcelHistoryPage({
 }) {
   const { q = "" } = await searchParams;
   const query = q.trim();
+  const queryAsNumber = Number.parseInt(query, 10);
 
   const parcels = await prisma.parcel.findMany({
     where: {
       status: "CLAIMED",
-      ...(query ? { household: { householdNumber: { contains: query } } } : {}),
+      ...(query
+        ? {
+            OR: [
+              { household: { householdNumber: { contains: query } } },
+              ...(Number.isFinite(queryAsNumber)
+                ? [{ parcelNumber: queryAsNumber }]
+                : []),
+            ],
+          }
+        : {}),
     },
     include: {
       household: true,
@@ -30,7 +41,7 @@ export default async function ParcelHistoryPage({
         <div>
           <h1 className="text-2xl font-semibold">領取紀錄</h1>
           <p className="mt-1 text-[var(--muted)]">
-            每筆皆記錄新增／領取時間與處理的管理員
+            每筆皆記錄編號、新增／領取時間與處理的管理員（編號領取後可再分配給新包裹）
           </p>
         </div>
         <Link
@@ -45,7 +56,7 @@ export default async function ParcelHistoryPage({
         <input
           name="q"
           defaultValue={query}
-          placeholder="輸入戶號搜尋"
+          placeholder="輸入戶號或包裹編號搜尋"
           className="w-full max-w-sm rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 outline-none focus:border-[var(--brand)]"
         />
         <button className="rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 hover:bg-[var(--bg)]">
@@ -57,9 +68,10 @@ export default async function ParcelHistoryPage({
         {parcels.length === 0 ? (
           <p className="p-8 text-center text-[var(--muted)]">尚無領取紀錄</p>
         ) : (
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-[var(--bg)] text-[var(--muted)]">
               <tr>
+                <th className="px-4 py-3 font-medium">編號</th>
                 <th className="px-4 py-3 font-medium">類型</th>
                 <th className="px-4 py-3 font-medium">住戶</th>
                 <th className="px-4 py-3 font-medium">新增</th>
@@ -69,6 +81,9 @@ export default async function ParcelHistoryPage({
             <tbody>
               {parcels.map((p) => (
                 <tr key={p.id} className="border-t border-[var(--line)]">
+                  <td className="px-4 py-3 font-semibold">
+                    {formatParcelNumber(p.parcelNumber)}
+                  </td>
                   <td className="px-4 py-3">{parcelTypeLabel(p.type)}</td>
                   <td className="px-4 py-3">
                     {p.household.doorplate}　戶號 {p.household.householdNumber}

@@ -135,11 +135,17 @@ export function parcelNotifyMessages(opts: {
   type: ParcelType;
   doorplate: string;
   householdNumber: string;
+  parcelNumber?: number;
   photoUrl?: string;
 }): LineMessage[] {
   const kind = typeLabel(opts.type);
+  const no =
+    opts.parcelNumber != null
+      ? String(opts.parcelNumber).padStart(3, "0")
+      : null;
   const text = [
     `您有新的${kind}已送達管理室。`,
+    ...(no ? [`包裹編號：${no}`] : []),
     `門牌：${opts.doorplate}`,
     `戶號：${opts.householdNumber}`,
     "",
@@ -170,8 +176,10 @@ export function myParcelsText(
   const lines = [`尚未領取共 ${parcels.length} 件：`, ""];
   parcels.forEach((p, i) => {
     const when = p.createdAt.toLocaleString("zh-TW", { hour12: false });
+    const no =
+      p.parcelNumber != null ? String(p.parcelNumber).padStart(3, "0") : "—";
     lines.push(
-      `${i + 1}. ${typeLabel(p.type)}｜${p.household.doorplate} ${p.household.householdNumber}`,
+      `${i + 1}. 編號 ${no}｜${typeLabel(p.type)}｜${p.household.doorplate} ${p.household.householdNumber}`,
     );
     lines.push(`   送達時間：${when}`);
   });

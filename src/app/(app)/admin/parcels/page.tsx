@@ -2,27 +2,36 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ClaimCheckbox } from "./claim-checkbox";
 import { formatDateTime, parcelTypeLabel } from "@/lib/format";
+import { formatParcelNumber } from "@/lib/parcel-number";
 
 export default async function ParcelsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; ok?: string }>;
+  searchParams: Promise<{ q?: string; ok?: string; no?: string }>;
 }) {
-  const { q = "", ok } = await searchParams;
+  const { q = "", ok, no } = await searchParams;
   const query = q.trim();
+  const queryAsNumber = Number.parseInt(query, 10);
 
   const parcels = await prisma.parcel.findMany({
     where: {
       status: "PENDING",
       ...(query
-        ? { household: { householdNumber: { contains: query } } }
+        ? {
+            OR: [
+              { household: { householdNumber: { contains: query } } },
+              ...(Number.isFinite(queryAsNumber)
+                ? [{ parcelNumber: queryAsNumber }]
+                : []),
+            ],
+          }
         : {}),
     },
     include: {
       household: true,
       createdBy: true,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ parcelNumber: "asc" }, { createdAt: "desc" }],
   });
 
   return (
@@ -30,7 +39,9 @@ export default async function ParcelsPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">未領取包裹</h1>
-          <p className="mt-1 text-[var(--muted)]">輸入戶號即可搜尋，領取時勾選確認</p>
+          <p className="mt-1 text-[var(--muted)]">
+            可搜尋戶號或包裹編號；領取後編號會釋出可再使用
+          </p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -50,12 +61,14 @@ export default async function ParcelsPage({
 
       {ok === "created" && (
         <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          已新增，並嘗試通知已綁定的住戶 LINE。
+          已新增
+          {no ? `（編號 ${formatParcelNumber(Number(no))}）` : ""}
+          ，並嘗試通知已綁定的住戶 LINE。
         </p>
       )}
       {ok === "claimed" && (
         <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          已標記為領取。
+          已標記為領取，該編號已釋出可再使用。
         </p>
       )}
 
@@ -63,7 +76,7 @@ export default async function ParcelsPage({
         <input
           name="q"
           defaultValue={query}
-          placeholder="輸入戶號搜尋"
+          placeholder="輸入戶號或包裹編號搜尋"
           className="w-full max-w-sm rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 outline-none focus:border-[var(--brand)]"
         />
         <button className="rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 hover:bg-[var(--bg)]">
@@ -77,7 +90,10 @@ export default async function ParcelsPage({
         ) : (
           <div className="divide-y divide-[var(--line)]">
             {parcels.map((p) => (
-              <article key={p.id} className="grid gap-4 p-4 sm:grid-cols-[120px_1fr_auto] sm:items-center">
+              <article
+                key={p.id}
+                className="grid gap-4 p-4 sm:grid-cols-[120px_1fr_auto] sm:items-center"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.photoPath}
@@ -86,6 +102,9 @@ export default async function ParcelsPage({
                 />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-sm font-semibold text-[var(--brand)]">
+                      編號 {formatParcelNumber(p.parcelNumber)}
+                    </span>
                     <span className="rounded-full bg-[var(--bg)] px-2.5 py-0.5 text-sm">
                       {parcelTypeLabel(p.type)}
                     </span>

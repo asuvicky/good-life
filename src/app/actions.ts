@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
 import { saveUpload, publicFileUrl } from "@/lib/upload";
 import { isLineConfigured, parcelNotifyMessages, pushMessages } from "@/lib/line";
+import { allocateParcelNumber } from "@/lib/parcel-number";
 
 export async function createParcelAction(formData: FormData) {
   const session = await requireStaff();
@@ -20,7 +21,7 @@ export async function createParcelAction(formData: FormData) {
     redirect("/admin/parcels/new?error=" + encodeURIComponent("請勾選包裹或郵件"));
   }
   if (!doorplate || !householdNumber) {
-    redirect("/admin/parcels/new?error=" + encodeURIComponent("請選擇門牌並填寫戶號"));
+    redirect("/admin/parcels/new?error=" + encodeURIComponent("請選擇門牌與戶號"));
   }
 
   const household = await prisma.household.findUnique({
@@ -45,11 +46,14 @@ export async function createParcelAction(formData: FormData) {
     redirect("/admin/parcels/new?error=" + encodeURIComponent(message));
   }
 
+  const parcelNumber = await allocateParcelNumber();
+
   const parcel = await prisma.parcel.create({
     data: {
       householdId: household.id,
       type,
       photoPath,
+      parcelNumber,
       createdById: session.staffId,
     },
   });
@@ -59,6 +63,7 @@ export async function createParcelAction(formData: FormData) {
     type: type as "PARCEL" | "MAIL",
     doorplate: household.doorplate,
     householdNumber: household.householdNumber,
+    parcelNumber,
     photoUrl,
   });
 
@@ -69,7 +74,7 @@ export async function createParcelAction(formData: FormData) {
   }
 
   revalidatePath("/admin/parcels");
-  redirect("/admin/parcels?ok=created");
+  redirect(`/admin/parcels?ok=created&no=${parcelNumber}`);
 }
 
 export async function claimParcelAction(formData: FormData) {

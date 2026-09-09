@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { createParcelAction } from "@/app/actions";
 import { DoorplateHouseholdSelect } from "./doorplate-household-select";
+import {
+  allocateParcelNumber,
+  formatParcelNumber,
+} from "@/lib/parcel-number";
 
 export default async function NewParcelPage({
   searchParams,
@@ -8,16 +12,19 @@ export default async function NewParcelPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const households = await prisma.household.findMany({
-    select: { doorplate: true, householdNumber: true },
-    orderBy: [{ doorplate: "asc" }, { householdNumber: "asc" }],
-  });
+  const [households, nextNumber] = await Promise.all([
+    prisma.household.findMany({
+      select: { doorplate: true, householdNumber: true },
+      orderBy: [{ doorplate: "asc" }, { householdNumber: "asc" }],
+    }),
+    allocateParcelNumber(),
+  ]);
 
   return (
     <div className="mx-auto max-w-xl">
       <h1 className="text-2xl font-semibold">新增包裹</h1>
       <p className="mt-1 text-[var(--muted)]">
-        拍照上傳，勾選包裹或郵件，再選擇門牌與戶號
+        拍照上傳，勾選包裹或郵件，再選擇門牌與戶號；編號會自動產生，領取後釋出可再使用
       </p>
 
       {error && (
@@ -28,6 +35,18 @@ export default async function NewParcelPage({
         action={createParcelAction}
         className="mt-6 space-y-5 rounded-2xl border border-[var(--line)] bg-white p-5"
       >
+        <label className="block">
+          <span className="mb-1 block text-sm text-[var(--muted)]">包裹編號</span>
+          <input
+            value={formatParcelNumber(nextNumber)}
+            readOnly
+            className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2.5 text-lg font-semibold tracking-wide"
+          />
+          <span className="mt-1 block text-xs text-[var(--muted)]">
+            系統自動產生（目前建議編號，儲存時以當下可用最小編號為準）
+          </span>
+        </label>
+
         <label className="block">
           <span className="mb-1 block text-sm text-[var(--muted)]">包裹照片</span>
           <input

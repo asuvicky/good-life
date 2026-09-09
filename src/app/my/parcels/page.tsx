@@ -4,6 +4,7 @@ import { requireResident } from "@/lib/auth";
 import { logoutResidentAction } from "@/app/resident-actions";
 import { formatDateTime, parcelTypeLabel } from "@/lib/format";
 import { parcelPhotoSrc } from "@/lib/upload";
+import { formatParcelNumber } from "@/lib/parcel-number";
 
 export default async function MyParcelsPage({
   searchParams,
@@ -71,6 +72,9 @@ export default async function MyParcelsPage({
                 />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-sm font-semibold text-[var(--brand)]">
+                      編號 {formatParcelNumber(p.parcelNumber)}
+                    </span>
                     <span className="rounded-full bg-[var(--bg)] px-2.5 py-0.5 text-sm">
                       {parcelTypeLabel(p.type)}
                     </span>
