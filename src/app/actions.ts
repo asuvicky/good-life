@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
 import { saveUpload, publicFileUrl } from "@/lib/upload";
@@ -67,10 +68,13 @@ export async function createParcelAction(formData: FormData) {
     photoUrl,
   });
 
-  if (isLineConfigured()) {
-    await Promise.allSettled(
-      household.lineBindings.map((b) => pushMessages(b.lineUserId, messages)),
-    );
+  const lineUserIds = household.lineBindings.map((b) => b.lineUserId);
+  if (isLineConfigured() && lineUserIds.length > 0) {
+    after(async () => {
+      await Promise.allSettled(
+        lineUserIds.map((lineUserId) => pushMessages(lineUserId, messages)),
+      );
+    });
   }
 
   revalidatePath("/admin/parcels");
